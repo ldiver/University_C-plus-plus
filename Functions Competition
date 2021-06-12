@@ -1,0 +1,59 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+//this code is about 3 people called Rafael, Beto and Carlos. They created their own functions. 
+//the user will enter the number of test cases and the numbers he or she wants to test, in order to see wich function gets the higher outcome
+
+//the non-returning function void will test the numbers , entered by the user, in the 3 functions made by Rafael, Beto and Carlos.
+void funcoes(int H){
+	int x, y, Rafael, Beto, Carlos;
+	//loop until it reaches the number of test cases
+	for(int i = 0; i < H; i++){
+	cin>>x;//read first number to get tested
+	cin>>y;//read second number to get tested
+	
+	//if the numbers entered are higher than 0 and lower than 101
+	if(1 <= x && y <= 100){
+				
+	//Rafael, Beto and Carlos functions
+	Rafael = (pow(3*x,2)) + (pow(y,2));
+	Beto = (2*pow(x,2)) + (pow(5*y,2));
+	Carlos = ((-100)*x) + (pow(y,3));
+	
+	//Rafael condition
+	if(Rafael>Beto && Rafael>Carlos){
+		cout<<"Rafael won"<<endl;
+	}
+	else{
+	//Beto condition
+	if(Beto>Rafael && Beto>Carlos){
+		cout<<"Beto won"<<endl;
+	}
+			
+	else{
+	//Carlos condition
+	if(Carlos>Beto && Carlos>Rafael){
+		cout<<"Carlos won"<<endl;
+}
+}
+}
+}
+	else{
+	//if both numbers entered were 0	
+		cout<<"There are no winners"<<endl;		
+	}	
+}	
+}
+
+
+
+//the function main will only call the void 'funcoes' one
+int main(){
+	int N; //number of test cases
+	
+	cin>>N; //read number of test cases
+	funcoes(N);//void function calling
+	
+return 0;
+}
