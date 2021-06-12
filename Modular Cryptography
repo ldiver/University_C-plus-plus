@@ -1,0 +1,576 @@
+#include<iostream>
+#include<iomanip>
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>
+#include <vector>
+using namespace std;
+
+//       ******************** Funções de Criptografia RSA **********************  
+
+struct UmAutor{
+	vector <long int> msg;  // vector que contém a mensagem
+	vector <long int> msgSec; 
+	string texto;
+	long int fi;
+	long int d,p,q; // compoem a chave privada (secreta)
+	long int n,e; // compoem a chave publica
+	
+	void LeMsgInt();  //  le a mensagem e converte caracteres em inteiros
+	void ImprimeMsg();  //  imprime a mensagem em caracteres
+	void GeraChave();
+	long int GeraPrimo(int);
+	void Encripta();
+	long int EstEuclides(long int , long int );
+	
+};
+
+struct UmLeitor{
+	vector <long int> msgDec; 
+	string textoDec;
+	int Decripta(vector <long int> &msgSec,long int d, long int n);
+	
+};
+
+
+/* 
+  1) Função para o Cálculo de Exponenciação Modular
+  2) retorna base^expo (mod m) 
+  3) uso apenas com números primos menores
+  4) Referência: pseudocódigo em
+  https://en.wikipedia.org/wiki/Modular_exponentiation
+ */
+long int modular_pow1(long int base,long int exponent, long int modulus){
+	 long int c;
+	 int e_p;
+	if(modulus==1) return 0; 
+    c = 1;
+    for(e_p = 0;e_p<exponent; e_p++)  c = (c * base)% modulus;
+    return c;	
+}
+
+
+
+/* 
+  1) Função para o Cálculo de Exponenciação Modular
+  2) retorna base^expo (mod m) 
+  3) Permite o uso de números primos maiores
+  4) Referência: pseudocódigo em
+  https://eli.thegreenplace.net/2009/03/28/efficient-modular-exponentiation-algorithms
+  
+ */
+long long modular_pow2(long long base, long long expo, int mod)
+{
+    long long res = 1;
+    while (expo > 0)
+    {
+        if (expo % 2 == 1)
+            res = (res * base) % mod;
+        expo = expo >> 1;
+        base = (base * base) % mod;
+    }
+    return res;
+}
+   
+   int UmLeitor::Decripta(vector <long int> &msgSec,long int d, long int n){
+	long int c,m_p;
+	int tam,teste;
+	char Ca;
+	
+	tam=msgSec.size();
+		
+	for (int i=0;i<tam;i++)
+    {
+        c=msgSec[i];
+        // exponenciação modular aprimorada 
+		m_p=modular_pow2(c,d,n);    // permite Nrs primos maiores
+		msgDec.push_back(m_p); 
+    }
+    
+    cout<<endl<<endl;
+	cout<< " *********   Resultado da Decriptacao     ********"<<endl;
+    cout<< "   Nr    Encriptado    Decriptado     Texto"<<endl;
+    
+	for (int i=0;i<tam;i++)
+    {
+        Ca = (char) msgDec[i];      // convertendo para caracter
+       
+		cout <<setw(5)<< i <<setw(12) <<msgSec[i] <<setw(12)<< msgDec[i] <<setw(10)<< Ca << endl;
+    }
+    
+    
+    return 0;
+}
+
+void UmAutor::Encripta(){
+	long int c,m;
+	int tam;
+	tam=msg.size();
+	
+	for (int i=0;i<tam;i++)
+    {
+        m=msg[i];
+		c=modular_pow2(m,e,n);    // usando chave publica
+		msgSec.push_back(c); 
+    }
+	
+	cout<<endl;
+	cout<< " *********   Resultado da Encriptacao     ********"<<endl;
+    cout<< "   Nr    Texto     Ascii      Encriptado   "<<endl;
+    
+	for (int i=0;i<tam;i++)
+    {
+        cout <<setw(5)<< i <<setw(8) <<texto[i] <<setw(12)<< msg[i] <<setw(10)<< msgSec[i] << endl;
+    }
+	   	
+}
+
+
+long int UmAutor::EstEuclides(long int a, long int b){  // entre com o módulo em "a"  obs: use módulo positivo
+	long int q=0,x=0,y=1,xant=1,yant=0,baux, xaux,yaux,inv,m; // inicialização
+	m=a;  // guarda o valor do modulo
+		
+	while(b!=0){ // interação 
+		q=a/b;
+		baux=b;
+		b=a%b;
+		a=baux;
+		xaux = x;
+		x=xant-q*x;
+		xant=xaux;
+		yaux = y;
+		y=yant-q*y;
+		yant=yaux;
+		
+	}
+	// se o inverso é negativo 
+	inv=yant;
+	while(inv<0) inv = inv + m;  // m é o módulo
+	if (a!=1) return 0;
+	else return inv;  // inverso multiplicativo
+}
+
+long int UmAutor::GeraPrimo(int i){
+	//  recomenda-se usar valores onde (p-1)*(q-1)<50000
+	//  valores testados 
+	//  (p,q) = (37,229), (53,263), (89,317), (89,449), (67,691), (181,557), (1597,3001),
+	//           (,)
+	//  testados com e = 257
+	if(i==1) return 3163;
+	if(i==2) return 7919;
+}
+
+
+void UmAutor::GeraChave(){
+	p=GeraPrimo(1);
+	q=GeraPrimo(2);
+	//  número primo permite verificação mais simples
+	e=257;
+
+	p=GeraPrimo(1);
+		
+	q=GeraPrimo(2);
+	
+	n=p*q;
+	
+	fi=(p-1)*(q-1);
+	
+	// if(fi>50000) cout<< " Use números primos menores!"<<endl;
+	
+	cout<< " ********** Geracao de Chaves Publica e Privada ***********"<<endl;
+	cout<<" numeros primos (Chave privada)"<<endl;
+	cout<< " p = "<<p<<endl;
+	cout<< " q = "<<q<<endl;
+	cout<< " funcao totiente "<<endl;
+	cout<< "  fi = (p-1)*(q-1) = "<< fi;	
+	
+	// inverso multiplicativo
+	d=EstEuclides(fi,e); 
+	if(d<fi) cout<< " d valido "<<endl;
+	cout<< " Chave Publica "<<endl;;
+	cout<< " n= "<<n<<endl;;
+
+	
+	cout<< " Chave Privada (secreta) "<<endl;;
+	cout<< " d = "<<d<<endl;
+	
+	
+}
+
+void UmAutor::LeMsgInt(){
+    string user;
+    long int IntChar;
+    int tam;
+    
+    
+    cout<<"digite a frase"<<endl;
+    cin.ignore();
+    getline(cin, texto);
+    cout<<"Frase recebida foi: "<< texto <<endl;
+    cout << endl;
+    tam=texto.length();
+    for (int i=0;i<tam;i++)
+    {
+        IntChar = texto[i];
+		msg.push_back(IntChar);
+    }
+	  
+	
+}
+
+void UmAutor::ImprimeMsg(){
+	int tam=texto.length();
+	    tam=msg.size();
+	for (int i=0;i<tam;i++)
+    {
+        cout <<texto[i]<< " = "<< msg[i] << endl; 
+       
+    }
+	
+}
+
+
+int RSA(){
+	
+	UmAutor chad;  //  declara um autor
+	UmLeitor anon;   //  declara uma leitora
+	
+	chad.LeMsgInt();
+	chad.GeraChave();
+	chad.Encripta();
+	// leitor recebe a chave publica (d,n)
+	anon.Decripta(chad.msgSec,chad.d,chad.n);
+	
+}
+
+
+
+
+//  ************************* Rotinas de Aritmetica Modular ******************************
+
+/*
+
+Teste de primalidade de Miller-Rabin
+
+referência:
+Pseudocódigo em
+
+[1] https://en.wikibooks.org/wiki/Algorithm_Implementation/Mathematics/Primality_Testing
+
+[2] Implementacãoo Eficiente de Algoritmos para Teste de Primalidade , 
+Bruno C. Dias Ribeiro1 , Diego F. Aranha2 , 
+XIV Simpósio Brasileiro em Segurança da Informação e de Sistemas Computacionais — SBSeg 2014 
+http://www.lbd.dcc.ufmg.br/colecoes/sbseg/2014/0067.pdf
+
+
+*/
+
+bool TestaMillerRabin(int long n,int long d,int long s){
+long int a,x;
+
+srand (time(NULL));   // semeando com TIME
+a = rand()% (n-2) + 2; //  número aleatório entre 2 e n-2
+
+
+// x = potencia(a,d) % n;
+x =  modular_pow2(a,d,n);	
+if(x==1 || x==(n-1)) return 1;
+for(int i=1;i<=s-1;i++){
+	x = (x*x) % n;
+	if (x == 1) return 0;
+    if (x == n-1) return 1;    
+    return 0;
+	}
+return 0;
+}
+
+bool ePrimo(long int n, int k){
+int long d,s=0;
+if(n<=4){ cout<< " use n > 4 !"; return 0; }
+if(n%2==0){cout<< " numero deve ser impar !"; return 0; } 
+d=n-1;
+while(d%2==0){  // fatora n-1 em potencias de 2
+	d=d/2;	    // n-1 = pow(2,s)*d
+	s++;     
+}
+for(int i=1;i<=k;i++){
+	if (TestaMillerRabin(n,d,s)==0) return 0;  
+}
+return 1;	
+}
+
+   
+
+// verifica se a e b são congruentes
+
+
+long int eCongruente(long int a, long int b, long int m){
+	if((a-b)%m==0){
+		cout<<"a:=:b ( mod m ) "<<endl;
+		cout<<a<<" e "<<b<<" sao congruentes em mod "<<m<<endl;
+	}
+	else{
+		cout<<"nao ha congruencia."<<endl;
+	}
+	cout<<endl;
+}
+
+
+void tabela_modulo(long int m){
+	
+	int c=0,i, j, matriz[20][20];
+	int i1,j1,i2,a,b;
+
+	for(int j=0; j<m; j++){
+		for(int i=0; i<m; i++) matriz[i][j]=j+m*i;
+	}
+	
+	cout<< " tabela modulo "<<m<<endl;
+	for(i=0;i<m;i++)
+	{
+   		for(j=0;j<m;j++)
+   		{
+       		cout<< setw(5)<< matriz[i][j];
+		}
+   	cout<<endl;
+	}
+	cout<<endl;
+	cout<<endl;
+	
+	j1=rand()%m;
+	i1=rand()%m;
+	i2=rand()%m;
+	a=matriz[i1][j1];
+	b=matriz[i2][j1];
+	eCongruente(a,b,m);
+	
+}
+
+void tabela_modulo2(long int m){
+	//  testa propriedades de congruência 
+	
+	int c=0,i, j, matriz[20][20];
+	int i1,j1,j2,i2,a1,b1, a2,b2;
+
+	for(int j=0; j<m; j++){
+		for(int i=0; i<m; i++) matriz[i][j]=j+m*i;
+	}
+	
+	cout<< " tabela modulo "<<m<<endl;
+	for(i=0;i<m;i++)
+	{
+   		for(j=0;j<m;j++)
+   		{
+       		cout<< setw(5)<< matriz[i][j];
+		}
+   	cout<<endl;
+	}
+	cout<<endl;
+	cout<<endl;
+	
+	j1=rand()%m;
+	i1=rand()%m;
+	i2=rand()%m;
+	a1=matriz[i1][j1];
+	b1=matriz[i2][j1];
+	eCongruente(a1,b1,m);
+	
+	j2=rand()%m;
+	i1=rand()%m;
+	i2=rand()%m;
+	a2=matriz[i1][j2];
+	b2=matriz[i2][j2];
+	
+	eCongruente(a2,b2,m);
+	cout <<" multiplicando as congruencias"<<endl;
+	cout << a1<<" x "<<a2<<" = "<<a1*a2<<endl;
+	cout << b1<<" x "<<b2<<" = "<<b1*b2<<endl;
+	
+	eCongruente(a1*a2,b1*b2,m);
+}
+
+
+void tabuada_modular(long int m){
+	//  tabuada de multiplicacao modular
+	
+	int c=0,i, j, matriz[20][20];
+	int i1,j1,j2,i2,a1,b1, a2,b2;
+
+	for(int j=1; j<m; j++){
+		for(int i=1; i<m; i++) matriz[i][j]=i*j%m;
+	}
+	
+	cout<< " tabuada de multiplicacao modulo "<<m<<endl;
+	cout<< setw(5)<<"(x)";
+	for(i=1;i<m;i++) cout<< setw(5)<< i;
+	cout<<endl;
+	
+	for(i=1;i<m;i++)
+	{
+	cout<< setw(5)<<i;
+   		for(j=1;j<m;j++)
+   		{
+       		cout<< setw(5)<< matriz[i][j];
+		}
+   	cout<<endl;
+	}
+	
+	for(i=1;i<m;i++)
+	{
+	for(j=1;j<m;j++)
+   		{
+       		if(matriz[i][j]==1) {
+       		cout<<i<<" e "<<j << " sao inversos multiplicativos em mod m = "<<m<<endl;	
+			}
+   		}
+	}
+}
+
+
+int ImprimeMenu(){
+	int res;
+	
+	cout << endl << endl;
+	cout <<" ********** Estudo de Aritmetica Modular e Criptografia RSA  ************* " << endl;
+	cout <<"  (1) - Numeros congruentes " << endl<< endl;
+	cout <<"  (2) - Tabela modulo m " << endl<< endl;
+	cout <<"  (3) - Propriedades de congruencia " << endl<< endl;
+	cout <<"  (4) - Metodo Estendido de Euclides " << endl<< endl;
+	cout <<"  (5) - Tabuada de multiplicacao modular "<< endl << endl;
+	cout <<"  (6) - Teste de Primalidade Miller-Rabin "<< endl << endl;	
+	cout <<"  (7) - Exponenciacao Modular "<< endl<< endl;
+	cout <<"  (8) - Criptografia RSA "<< endl<< endl;
+	cout <<"  (9) - FIM " << endl<< endl;
+	
+	cout << endl << " Indique sua escolha: ";
+	cin >> res;
+	cout << endl << endl;
+	return res;
+	
+}
+
+
+long int EstEuclides(long int a, long int b){  // entre com o módulo em "a"  obs: use módulo positivo
+	long int q=0,x=0,y=1,xant=1,yant=0,baux, xaux,yaux,inv,m; // inicialização
+	m=a;  // guarda o valor do modulo
+	// retorna zero se não houver inverso
+	// só há inversos se o mdc for igual a um (a==1)
+	while(b!=0){ // interação 
+		q=a/b;
+		baux=b;
+		b=a%b;
+		a=baux;
+		xaux = x;
+		x=xant-q*x;
+		xant=xaux;
+		yaux = y;
+		y=yant-q*y;
+		yant=yaux;
+		
+	}
+	// se o inverso é negativo 
+	inv=yant;
+	while(inv<0) inv = inv + m;  // m é o módulo
+	if (a!=1) return 0;  // mdc != 1 não há inverso
+	else return inv;  // inverso multiplicativo
+}
+
+
+
+int main(){
+	
+	int a,b,c,m,inv;
+	int escolha=0, Fim=9;
+	
+	while(escolha != Fim){
+		escolha = ImprimeMenu();
+		
+		switch(escolha){
+		case 1:
+			cout<<" verifica se a :=: b (mod m)"<<endl;
+			cout<<"Informe o valor de a"<<endl;
+			cin>>a;
+			cout<<"Informe o valor de b "<<endl;;
+			cin>>b;
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			eCongruente(a,b,m);
+			break;
+			
+		case 2:
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			tabela_modulo(m);
+			break;	
+			
+		case 3:
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			tabela_modulo2(m);
+			break;
+			
+		case 4:
+			cout<<" calcula o inverso multiplicativo de a (mod m)"<<endl;
+			cout<<" Usa o Metodo Estendido de Euclides"<<endl;
+			cout<<"Informe o valor de a"<<endl;
+			cin>>a;
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			inv=EstEuclides(m, a);
+			if (inv!=0 )cout<<" inverso de a (mod m) = "<<inv;
+			else cout<<" Nao ha inverso de a (mod m)"<<endl;
+			break;
+				
+		case 5:
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			tabuada_modular(m);
+			break;
+			
+		
+		case 6:
+			cout<<" Testa a primalidade do valor fornecido "<<endl;
+			cout<<" Indica positivo se houver forte probabilidade"<<endl;
+			cout<<"Informe o valor de a "<<endl;
+			cin>>a;
+			b=ePrimo(a, 3);
+			cout<<endl<<endl;
+			if(b) cout<<"provavel primo"<<endl;
+			else cout<<" nao e primo"<<endl;
+			break;
+			
+		case 7:
+			cout<<" Calcula a potenciacao modular"<<endl;
+			cout<<" a^b (mod m)"<<endl;
+			cout<<"Informe o valor de a"<<endl;
+			cin>>a;
+			cout<<"Informe o valor de b "<<endl;;
+			cin>>b;
+			cout<<"Informe o valor de m (modulo) "<<endl;;
+			cin>>m;
+			c=modular_pow2(a,b,m);  // permite Nrs primos maiores
+			cout<<" res= "<<c;
+			break;
+			
+		case 8: 
+			RSA();
+		    break;	
+				
+		case 9:
+			cout << "FIM!!" << endl;
+			return 1;
+			break;
+			
+		
+									
+		default:
+			cout << " Menu nao tem essa escolha !!" << endl;
+			break;
+			
+			
+		}
+		
+		
+	}
+	
+	
+}
