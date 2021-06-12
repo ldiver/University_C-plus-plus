@@ -1,0 +1,152 @@
+#include<iostream>
+using namespace std;
+
+/*void merge(int A[], int low, int high, int mid)
+{
+    int i, j, k, c[50];
+    i = low;
+    k = low;
+    j = mid + 1;
+    while (i <= mid && j <= high)
+    {
+        if (A[i] < A[j])
+        {
+            c[k] = A[i];
+            k++;
+            i++;
+        }
+        else
+        {
+            c[k] = A[j];
+            k++;
+            j++;
+        }
+    }
+    while (i <= mid)
+    {
+        c[k] = A[i];
+        k++;
+        i++;
+    }
+    while (j <= high)
+    {
+        c[k] = A[j];
+        k++;
+        j++;
+    }
+    for (i = low; i < k; i++)
+    {
+        A[i] = c[i];
+    }
+}*/
+
+void merge(int V[], int l, int m, int r) 
+{ 
+    int i, j, k; 
+    
+    //  tamanho de L[] e R[]
+    int n1 = m - l + 1; 
+    int n2 =  r - m; 
+  
+    /* create temp arrays */
+    int L[n1], R[n2]; 
+  
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++) 
+        L[i] = V[l + i]; 
+        
+    for (j = 0; j < n2; j++) 
+        R[j] = V[m + 1+ j]; 
+          
+  
+    /* Merge the temp arrays back into arr[l..r]*/
+    i = 0; // Initial index of first subarray 
+    j = 0; // Initial index of second subarray 
+    k = l; // Initial index of merged subarray 
+    
+    while (i < n1 && j < n2) 
+    { 
+        if (L[i] <= R[j]) 
+        { 
+            V[k] = L[i]; 
+            i++; 
+        } 
+        else
+        { 
+            V[k] = R[j]; 
+            j++; 
+        } 
+        k++; 
+    } 
+  
+    /* Copy the remaining elements of L[], if there 
+       are any */
+    while (i < n1) 
+    { 
+        V[k] = L[i]; 
+        i++; 
+        k++; 
+    } 
+  
+    /* Copy the remaining elements of R[], if there 
+       are any */
+    while (j < n2) 
+    { 
+        V[k] = R[j]; 
+        j++; 
+        k++; 
+    } 
+} 
+
+void mergesort(int A[],int i, int k){
+	int j;
+	if(i<k){
+		j = (i+k)/2;
+		mergesort(A,i,j);
+		mergesort(A,j+1,k);
+		merge(A,i,j,k);
+	}
+}
+
+
+
+/*int main(){
+	int arraySize = 7;
+	int A[7] = {38,27,43,3,9,82,10};
+	
+	int low = 0;
+	int high = arraySize - 1;
+	
+	mergesort(A, low, high);
+	
+	for(int i = 0; i<7; i++){
+		cout<<A[i]<<endl;
+	}
+	
+	return 0;
+}*/
+
+/*void printArray(int A[], int size) 
+{ 
+    int i; 
+    for (i=0; i < size; i++) 
+        printf("%d ", A[i]); 
+    printf("\n"); 
+}*/
+
+
+int main() 
+{ 
+	int arraySize = 6;
+
+    int arr[] = {12, 11, 13, 5, 6, 7}; 
+    int low = 0;
+	int high =  arraySize - 1;
+  
+    mergesort(arr, low, high); 
+  
+    for(int i = 0; i<6; i++){
+    	cout<<arr[i]<<endl;
+	}
+    return 0; 
+} 
